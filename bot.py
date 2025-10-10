@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 SELECTING_ACTION, CHOOSING_STATION_FROM, CHOOSING_STATION_TO = range(3)
 
-API_KEY = "c5ff1d1c-3f67-4df3-befb-a7863ceb178e" 
+API_KEY = "YaAPI" #сюда ключ из яндекса
 API_URL = "https://api.rasp.yandex.net/v3.0/search/"
 
 POPULAR_STATIONS = { 
@@ -335,10 +335,10 @@ class YandexScheduleBot:
         self.application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 def main():
-    BOT_TOKEN = "8188951143:AAHJYOlCSwSBMJwzXpzxARclSoRdQidgxUQ"
+    BOT_TOKEN = "BotKey" #ключ от бота из BotFather'a
     
     global API_KEY
-    API_KEY = "c5ff1d1c-3f67-4df3-befb-a7863ceb178e"
+    API_KEY = "YaAPI" #ключ из яндекса
     
     if BOT_TOKEN == "" or API_KEY == "":
         print("❌ Пожалуйста, установите ваш BOT_TOKEN и API_KEY")

@@ -539,10 +539,10 @@ class YandexScheduleBot:
         self.application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 def main():
-    BOT_TOKEN = "BotKey"
+    BOT_TOKEN = "BotKey" # <- ключ от бота сюда
     
     global API_KEY
-    API_KEY = "YaAPI"
+    API_KEY = "YaAPI" # <- ключ яндекса сюда
     
     if BOT_TOKEN == "" or API_KEY == "":
         print("❌ Пожалуйста, установите ваш BOT_TOKEN и API_KEY")

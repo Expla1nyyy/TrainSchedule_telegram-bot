@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 SELECTING_ACTION, CHOOSING_STATION_FROM, CHOOSING_STATION_TO, SAVING_ROUTE, MANAGING_ROUTES = range(5)
 
 
-API_KEY = "YaAPI"  # <- яндекс API ключ сюда
-API_URL = "https://api.rasp.yandex.net/v3.0/search/"
+API_KEY = "d04cac30-3681-4a48-9792-026b9b0d9378"  # <- яндекс API ключ сюда
+API_URL = "https://api.rasp.yandex-net.ru/v3.0/search/"
 
 
 ROUTES_FILE = "user_routes.pkl"
@@ -539,10 +539,10 @@ class YandexScheduleBot:
         self.application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 def main():
-    BOT_TOKEN = "BotKey" # <- ключ от бота сюда
+    BOT_TOKEN = "8188951143:AAGr_SS0p71apUkjxwrz4HYtYKvY9Sy-vtQ" # <- ключ от бота сюда
     
     global API_KEY
-    API_KEY = "YaAPI" # <- ключ яндекса сюда
+    API_KEY = "d04cac30-3681-4a48-9792-026b9b0d9378" # <- ключ яндекса сюда
     
     if BOT_TOKEN == "" or API_KEY == "":
         print("❌ Пожалуйста, установите ваш BOT_TOKEN и API_KEY")

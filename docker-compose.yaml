@@ -1,0 +1,8 @@
+services:
+  botervice:
+    container_name: TrainBot
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    
+

@@ -24,6 +24,9 @@ API_URL = "https://api.rasp.yandex-net.ru/v3.0/search/"
 
 ROUTES_FILE = "user_routes.pkl"
 
+# Московский часовой пояс
+MOSCOW_TZ = pytz.timezone('Europe/Moscow')
+
 POPULAR_STATIONS = { 
     "Москва (Ленинградский вокзал)": "s2006004",
     "Солнечногорск (Подсолнечная)": "s9603468",
@@ -71,7 +74,7 @@ class YandexScheduleBot:
             'from_name': from_name,
             'to_station': to_station,
             'to_name': to_name,
-            'created_at': datetime.now()
+            'created_at': datetime.now(MOSCOW_TZ)
         }
         
         self.user_routes[user_id].append(route_data)
@@ -113,6 +116,18 @@ class YandexScheduleBot:
         self.application.add_handler(conv_handler)
         self.application.add_handler(CommandHandler("myroutes", self.show_my_routes))
     
+    def get_moscow_time(self):
+        """Получить текущее московское время"""
+        return datetime.now(MOSCOW_TZ)
+    
+    def format_moscow_time(self, dt):
+        """Форматировать datetime в московское время"""
+        if dt.tzinfo is None:
+            dt = MOSCOW_TZ.localize(dt)
+        else:
+            dt = dt.astimezone(MOSCOW_TZ)
+        return dt
+    
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         user = update.message.from_user
         logger.info("Пользователь %s начал разговор", user.first_name)
@@ -132,8 +147,11 @@ class YandexScheduleBot:
         
         reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
         
+        current_time = self.get_moscow_time().strftime("%H:%M")
+        
         await update.message.reply_text(
             f"Привет, {user.first_name}! Я бот для поиска расписаний электричек с использованием Yandex.API.\n"
+            f"🕐 Текущее московское время: {current_time}\n"
             "Выберите действие:",
             reply_markup=reply_markup
         )
@@ -297,7 +315,7 @@ class YandexScheduleBot:
                 "from": from_station,
                 "to": to_station,
                 "lang": "ru_RU",
-                "date": datetime.now().strftime("%Y-%m-%d"),
+                "date": self.get_moscow_time().strftime("%Y-%m-%d"),
                 "transport_types": "suburban",
                 "limit": 50
             }
@@ -309,14 +327,15 @@ class YandexScheduleBot:
                 await update.message.reply_text("❌ Рейсов не найдено на сегодня")
                 return
             
-            now_utc = datetime.now(pytz.UTC)
+            now_moscow = self.get_moscow_time()
             
             upcoming_trains = []
             
             for segment in data['segments']:
                 departure_time = datetime.strptime(segment['departure'], '%Y-%m-%dT%H:%M:%S%z')
+                departure_time_moscow = self.format_moscow_time(departure_time)
                 
-                if departure_time >= now_utc:
+                if departure_time_moscow >= now_moscow:
                     upcoming_trains.append(segment)
             
             upcoming_trains.sort(key=lambda x: x['departure'])
@@ -327,13 +346,17 @@ class YandexScheduleBot:
             
             message = f"🚆 *Расписание электричек:*\n"
             message += f"📍 *{from_name}* → *{to_name}*\n"
-            message += f"📅 *{datetime.now().strftime('%d.%m.%Y')}*\n\n"
+            message += f"📅 *{now_moscow.strftime('%d.%m.%Y')}*\n"
+            message += f"🕐 *Текущее время: {now_moscow.strftime('%H:%M')}*\n\n"
             
             for segment in upcoming_trains[:8]:
                 departure = datetime.strptime(segment['departure'], '%Y-%m-%dT%H:%M:%S%z')
                 arrival = datetime.strptime(segment['arrival'], '%Y-%m-%dT%H:%M:%S%z')
                 
-                time_until_departure = departure - now_utc
+                departure_moscow = self.format_moscow_time(departure)
+                arrival_moscow = self.format_moscow_time(arrival)
+                
+                time_until_departure = departure_moscow - now_moscow
                 total_minutes = int(time_until_departure.total_seconds() // 60)
                 hours_until = total_minutes // 60
                 minutes_until = total_minutes % 60
@@ -344,8 +367,8 @@ class YandexScheduleBot:
                 else:
                     time_until_text = f"⏳ Через {minutes_until}мин"
                 
-                departure_local = departure.astimezone().strftime('%H:%M')
-                arrival_local = arrival.astimezone().strftime('%H:%M')
+                departure_local = departure_moscow.strftime('%H:%M')
+                arrival_local = arrival_moscow.strftime('%H:%M')
                 
                 message += (
                     f"🕐 *{departure_local}* - {arrival_local}\n"
@@ -369,7 +392,7 @@ class YandexScheduleBot:
     
     async def show_tomorrow_schedule(self, update: Update, from_station: str, to_station: str, from_name: str, to_name: str):
         try:
-            tomorrow = datetime.now() + timedelta(days=1)
+            tomorrow = self.get_moscow_time() + timedelta(days=1)
             
             params = {
                 "apikey": API_KEY,
@@ -397,8 +420,11 @@ class YandexScheduleBot:
                 departure = datetime.strptime(segment['departure'], '%Y-%m-%dT%H:%M:%S%z')
                 arrival = datetime.strptime(segment['arrival'], '%Y-%m-%dT%H:%M:%S%z')
                 
-                departure_local = departure.astimezone().strftime('%H:%M')
-                arrival_local = arrival.astimezone().strftime('%H:%M')
+                departure_moscow = self.format_moscow_time(departure)
+                arrival_moscow = self.format_moscow_time(arrival)
+                
+                departure_local = departure_moscow.strftime('%H:%M')
+                arrival_local = arrival_moscow.strftime('%H:%M')
                 
                 message += (
                     f"🕐 *{departure_local}* - {arrival_local}\n"

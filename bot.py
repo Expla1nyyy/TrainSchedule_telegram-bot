@@ -349,7 +349,8 @@ class YandexScheduleBot:
             message += f"📅 *{now_moscow.strftime('%d.%m.%Y')}*\n"
             message += f"🕐 *Текущее время: {now_moscow.strftime('%H:%M')}*\n\n"
             
-            for segment in upcoming_trains[:8]:
+            # Показываем 12 ближайших электричек вместо 8
+            for segment in upcoming_trains[:12]:
                 departure = datetime.strptime(segment['departure'], '%Y-%m-%dT%H:%M:%S%z')
                 arrival = datetime.strptime(segment['arrival'], '%Y-%m-%dT%H:%M:%S%z')
                 
@@ -378,8 +379,8 @@ class YandexScheduleBot:
                     f"——\n"
                 )
             
-            if len(upcoming_trains) > 8:
-                message += f"\n... и еще {len(upcoming_trains) - 8} рейсов"
+            if len(upcoming_trains) > 12:
+                message += f"\n... и еще {len(upcoming_trains) - 12} рейсов"
             
             await update.message.reply_text(message, parse_mode='Markdown')
             
@@ -402,7 +403,7 @@ class YandexScheduleBot:
                 "lang": "ru_RU",
                 "date": tomorrow.strftime("%Y-%m-%d"),
                 "transport_types": "suburban",
-                "limit": 5
+                "limit": 12  # Увеличиваем лимит для завтрашнего дня тоже
             }
             
             response = requests.get(API_URL, params=params, timeout=10)
@@ -416,7 +417,7 @@ class YandexScheduleBot:
             message += f"📍 *{from_name}* → *{to_name}*\n"
             message += f"📅 *{tomorrow.strftime('%d.%m.%Y')}*\n\n"
             
-            for segment in data['segments'][:5]:
+            for segment in data['segments'][:12]:  # Показываем 12 электричек на завтра
                 departure = datetime.strptime(segment['departure'], '%Y-%m-%dT%H:%M:%S%z')
                 arrival = datetime.strptime(segment['arrival'], '%Y-%m-%dT%H:%M:%S%z')
                 

@@ -24,7 +24,6 @@ API_URL = "https://api.rasp.yandex-net.ru/v3.0/search/"
 
 ROUTES_FILE = "user_routes.pkl"
 
-# Московский часовой пояс
 MOSCOW_TZ = pytz.timezone('Europe/Moscow')
 
 POPULAR_STATIONS = { 
@@ -117,11 +116,9 @@ class YandexScheduleBot:
         self.application.add_handler(CommandHandler("myroutes", self.show_my_routes))
     
     def get_moscow_time(self):
-        """Получить текущее московское время"""
         return datetime.now(MOSCOW_TZ)
     
     def format_moscow_time(self, dt):
-        """Форматировать datetime в московское время"""
         if dt.tzinfo is None:
             dt = MOSCOW_TZ.localize(dt)
         else:
@@ -138,7 +135,7 @@ class YandexScheduleBot:
         
         keyboard = [
             ["📅 Получить расписание"],
-            ["⭐ Мои маршруты"] if user_routes else ["⭐ Добавить маршрут"],
+            ["⭐ Мои маршруты"] if user_routes else ["⭐ Мои маршруты"],
         ]
         
         if user_routes:
@@ -200,12 +197,10 @@ class YandexScheduleBot:
         if "назад" in station_name.lower():
             return await self.start(update, context)
         
-        # Сохраняем выбранную станцию отправления
         if station_name in POPULAR_STATIONS:
             context.user_data['from_station'] = POPULAR_STATIONS[station_name]
             context.user_data['from_station_name'] = station_name
         else:
-            # Поиск станции по названию
             station_code, full_name = await self.search_station(station_name)
             if station_code:
                 context.user_data['from_station'] = station_code
@@ -214,7 +209,6 @@ class YandexScheduleBot:
                 await update.message.reply_text("❌ Станция не найдена. Попробуйте еще раз:")
                 return CHOOSING_STATION_FROM
         
-        # Запрашиваем станцию назначения
         keyboard = [[station] for station in POPULAR_STATIONS.keys()]
         keyboard.append(["↩️ Назад"])
         
@@ -298,7 +292,6 @@ class YandexScheduleBot:
             return await self.start(update, context)
     
     async def show_schedule(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Показ расписания (без сохранения маршрута)"""
         try:
             from_station = context.user_data.get('from_station')
             to_station = context.user_data.get('to_station')
@@ -349,7 +342,7 @@ class YandexScheduleBot:
             message += f"📅 *{now_moscow.strftime('%d.%m.%Y')}*\n"
             message += f"🕐 *Текущее время: {now_moscow.strftime('%H:%M')}*\n\n"
             
-            # Показываем 12 ближайших электричек вместо 8
+
             for segment in upcoming_trains[:12]:
                 departure = datetime.strptime(segment['departure'], '%Y-%m-%dT%H:%M:%S%z')
                 arrival = datetime.strptime(segment['arrival'], '%Y-%m-%dT%H:%M:%S%z')
@@ -403,7 +396,7 @@ class YandexScheduleBot:
                 "lang": "ru_RU",
                 "date": tomorrow.strftime("%Y-%m-%d"),
                 "transport_types": "suburban",
-                "limit": 12  # Увеличиваем лимит для завтрашнего дня тоже
+                "limit": 12
             }
             
             response = requests.get(API_URL, params=params, timeout=10)
@@ -417,7 +410,7 @@ class YandexScheduleBot:
             message += f"📍 *{from_name}* → *{to_name}*\n"
             message += f"📅 *{tomorrow.strftime('%d.%m.%Y')}*\n\n"
             
-            for segment in data['segments'][:12]:  # Показываем 12 электричек на завтра
+            for segment in data['segments'][:12]:
                 departure = datetime.strptime(segment['departure'], '%Y-%m-%dT%H:%M:%S%z')
                 arrival = datetime.strptime(segment['arrival'], '%Y-%m-%dT%H:%M:%S%z')
                 
@@ -453,7 +446,6 @@ class YandexScheduleBot:
             )
             return SELECTING_ACTION
         
-        # Показываем список маршрутов с кнопками удаления
         keyboard = []
         for i, route in enumerate(user_routes):
             keyboard.append([f"❌ Удалить {route['name']}"])
@@ -485,7 +477,6 @@ class YandexScheduleBot:
             return await self.ask_station_from(update, context)
         
         elif "удалить" in text.lower():
-            # Удаление маршрута
             route_name = text.replace("❌ Удалить ", "").strip()
             user_routes = self.get_user_routes(user_id)
             
@@ -519,7 +510,6 @@ class YandexScheduleBot:
         return await self.manage_routes(update, context)
     
     async def search_station(self, station_name: str) -> tuple:
-
         try:
             url = "https://api.rasp.yandex.net/v3.0/stations_list/"
             params = {
@@ -562,16 +552,15 @@ class YandexScheduleBot:
         return ConversationHandler.END
     
     def run(self):
-        """Запуск бота"""
         self.application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 def main():
-    BOT_TOKEN = "BotToken" # <- ключ от бота сюда
+    BOT_TOKEN = "BotAPI" # <- ключ от бота сюда
     
     global API_KEY
     API_KEY = "YaAPI" # <- ключ яндекса сюда
     
-    if BOT_TOKEN == "" or API_KEY == "":
+    if BOT_TOKEN == "BotAPI" or API_KEY == "YaAPI":
         print("❌ Пожалуйста, установите ваш BOT_TOKEN и API_KEY")
         return
     

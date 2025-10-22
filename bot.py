@@ -114,6 +114,7 @@ class YandexScheduleBot:
         
         self.application.add_handler(conv_handler)
         self.application.add_handler(CommandHandler("myroutes", self.show_my_routes))
+        self.application.add_handler(CommandHandler("restart", self.restart_bot))
     
     def get_moscow_time(self):
         return datetime.now(MOSCOW_TZ)
@@ -134,9 +135,9 @@ class YandexScheduleBot:
         user_routes = self.get_user_routes(user.id)
         
         keyboard = [
-            ["/start"],
             ["📅 Получить расписание"],
             ["⭐ Мои маршруты"] if user_routes else ["⭐ Мои маршруты"],
+            ["🔄 Перезапустить бота"]
         ]
         
         if user_routes:
@@ -156,9 +157,27 @@ class YandexScheduleBot:
         
         return SELECTING_ACTION
     
+    async def restart_bot(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        """Обработчик команды /restart для перезапуска бота"""
+        user = update.message.from_user
+        logger.info("Пользователь %s перезапустил бота", user.first_name)
+        
+        context.user_data.clear()
+        
+        await update.message.reply_text(
+            "🔄 Бот перезапущен!",
+            reply_markup=ReplyKeyboardRemove()
+        )
+        
+        return await self.start(update, context)
+    
     async def handle_main_menu(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         text = update.message.text
         user_id = update.message.from_user.id
+        
+        # Обработка перезапуска бота
+        if "перезапустить" in text.lower() or "рестарт" in text.lower():
+            return await self.restart_bot(update, context)
         
         user_routes = self.get_user_routes(user_id)
         for i, route in enumerate(user_routes):
@@ -183,7 +202,7 @@ class YandexScheduleBot:
     
     async def ask_station_from(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         keyboard = [[station] for station in POPULAR_STATIONS.keys()]
-        keyboard.append(["↩️ Назад"])
+        keyboard.append(["↩️ Назад", "🔄 Перезапустить бота"])
         
         reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
         await update.message.reply_text(
@@ -194,6 +213,9 @@ class YandexScheduleBot:
     
     async def handle_station_from(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         station_name = update.message.text
+        
+        if "перезапустить" in station_name.lower():
+            return await self.restart_bot(update, context)
         
         if "назад" in station_name.lower():
             return await self.start(update, context)
@@ -211,7 +233,7 @@ class YandexScheduleBot:
                 return CHOOSING_STATION_FROM
         
         keyboard = [[station] for station in POPULAR_STATIONS.keys()]
-        keyboard.append(["↩️ Назад"])
+        keyboard.append(["↩️ Назад", "🔄 Перезапустить бота"])
         
         reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
         await update.message.reply_text(
@@ -224,6 +246,9 @@ class YandexScheduleBot:
     
     async def handle_station_to(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         station_name = update.message.text
+        
+        if "перезапустить" in station_name.lower():
+            return await self.restart_bot(update, context)
         
         if "назад" in station_name.lower():
             return await self.ask_station_from(update, context)
@@ -244,7 +269,7 @@ class YandexScheduleBot:
         
         user_routes = self.get_user_routes(update.message.from_user.id)
         if len(user_routes) < 10: 
-            keyboard = [["💾 Сохранить маршрут"], ["❌ Не сохранять"]]
+            keyboard = [["💾 Сохранить маршрут"], ["❌ Не сохранять"], ["🔄 Перезапустить бота"]]
             reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
             await update.message.reply_text(
                 "Хотите сохранить этот маршрут в избранное для быстрого доступа?",
@@ -257,6 +282,9 @@ class YandexScheduleBot:
     
     async def handle_save_route(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         text = update.message.text
+        
+        if "перезапустить" in text.lower():
+            return await self.restart_bot(update, context)
         
         if "сохранить" in text.lower():
             await update.message.reply_text(
@@ -439,7 +467,7 @@ class YandexScheduleBot:
         user_routes = self.get_user_routes(user_id)
         
         if not user_routes:
-            keyboard = [["📅 Найти расписание"], ["↩️ В главное меню"]]
+            keyboard = [["📅 Найти расписание"], ["↩️ В главное меню", "🔄 Перезапустить бота"]]
             reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
             await update.message.reply_text(
                 "У вас пока нет сохраненных маршрутов.",
@@ -453,11 +481,12 @@ class YandexScheduleBot:
             keyboard.append([f"🚆 {route['name']}"])
         
         keyboard.append(["📅 Найти расписание", "↩️ В главное меню"])
+        keyboard.append(["🔄 Перезапустить бота"])
         
         reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
         
         routes_list = "\n".join([f"🚆 {route['name']} ({route['from_name']} → {route['to_name']})" 
-                               for route in-  user_routes])
+                               for route in user_routes])
         
         await update.message.reply_text(
             f"⭐ Ваши сохраненные маршруты:\n\n{routes_list}\n\n"
@@ -470,6 +499,9 @@ class YandexScheduleBot:
     async def handle_manage_routes(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         text = update.message.text
         user_id = update.message.from_user.id
+        
+        if "перезапустить" in text.lower():
+            return await self.restart_bot(update, context)
         
         if "назад" in text.lower() or "главное" in text.lower():
             return await self.start(update, context)

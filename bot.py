@@ -134,6 +134,7 @@ class YandexScheduleBot:
         user_routes = self.get_user_routes(user.id)
         
         keyboard = [
+            ["/start"],
             ["📅 Получить расписание"],
             ["⭐ Мои маршруты"] if user_routes else ["⭐ Мои маршруты"],
         ]
@@ -456,7 +457,7 @@ class YandexScheduleBot:
         reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
         
         routes_list = "\n".join([f"🚆 {route['name']} ({route['from_name']} → {route['to_name']})" 
-                               for route in user_routes])
+                               for route in-  user_routes])
         
         await update.message.reply_text(
             f"⭐ Ваши сохраненные маршруты:\n\n{routes_list}\n\n"
